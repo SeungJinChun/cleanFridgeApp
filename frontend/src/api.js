@@ -1,53 +1,35 @@
 const TODAY = new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })
 
-const TEXT_MODEL = 'gemini-flash-lite-latest'
-const VISION_MODEL = 'gemini-flash-lite-latest'
-
-function geminiBase(apiKey, model) {
-  return `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`
-}
-
 async function geminiText(apiKey, prompt, tokens = 600, temp = 0.3) {
-  const resp = await fetch(geminiBase(apiKey, TEXT_MODEL), {
+  const resp = await fetch('/api/gemini/text', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: { maxOutputTokens: tokens, temperature: temp },
-    }),
+    body: JSON.stringify({ apiKey, prompt, tokens, temp }),
   })
   if (!resp.ok) {
     const errText = await resp.text()
     let msg = errText.slice(0, 200)
-    try { msg = JSON.parse(errText).error?.message || msg } catch {}
+    try { msg = JSON.parse(errText).error || msg } catch {}
     throw new Error(msg)
   }
   const data = await resp.json()
-  return data.candidates[0].content.parts[0].text
+  return data.text
 }
 
 async function geminiVision(apiKey, prompt, base64Image, tokens = 600, temp = 0.3) {
-  const resp = await fetch(geminiBase(apiKey, VISION_MODEL), {
+  const resp = await fetch('/api/gemini/vision', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [{
-        parts: [
-          { text: prompt },
-          { inlineData: { mimeType: 'image/jpeg', data: base64Image } },
-        ],
-      }],
-      generationConfig: { maxOutputTokens: tokens, temperature: temp },
-    }),
+    body: JSON.stringify({ apiKey, prompt, base64Image, tokens, temp }),
   })
   if (!resp.ok) {
     const errText = await resp.text()
     let msg = errText.slice(0, 200)
-    try { msg = JSON.parse(errText).error?.message || msg } catch {}
+    try { msg = JSON.parse(errText).error || msg } catch {}
     throw new Error(msg)
   }
   const data = await resp.json()
-  return data.candidates[0].content.parts[0].text
+  return data.text
 }
 
 export async function analyzeProductImage(apiKey, base64Image) {
