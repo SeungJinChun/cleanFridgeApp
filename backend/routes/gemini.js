@@ -58,7 +58,7 @@ router.post('/vision', async (req, res) => {
     res.json({ text: data.candidates?.[0]?.content?.parts?.[0]?.text || '' })
   } catch (error) {
     res.status(500).json({ error: error.message })
-  })
+  }
 })
 
 export default router
