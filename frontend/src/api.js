@@ -34,10 +34,16 @@ async function geminiVision(apiKey, prompt, base64Image, tokens = 600, temp = 0.
 }
 
 export async function analyzeProductImage(apiKey, base64Image) {
-  const prompt = `이 식품 사진을 분석해줘. 포장지에 적힌 제품명을 그대로 알려주고, 이 식품의 카테고리(예: 우유, 두유, 라면, 과자, 계란, 김치 등)도 하나만 알려줘.
-유통기한 날짜가 찍혀있으면 YYYY-MM-DD로, 없으면 "없음".
-반드시 아래 형식만:
-제품명|카테고리|1개|YYYY-MM-DD 또는 없음`
+  const prompt = `이 식품 사진을 분석해줘.
+반드시 아래 형식의 한 줄만 출력해줘.
+형식: 제품명|카테고리|1개|YYYY-MM-DD 또는 없음
+규칙:
+1. 설명, 인사, 추가 문장, 마크다운, 코드블록, 목록 금지
+2. 제품명은 포장지에 적힌 이름 그대로 사용
+3. 카테고리는 예시 중 하나만 사용: 우유, 두유, 라면, 과자, 계란, 김치, 빵, 과일, 채소, 육류, 생선, 해산물, 음료, 기타
+4. 유통기한이 없으면 없음으로 표기
+5. 반드시 한 줄만 출력하고, 줄바꿈은 1번만 허용
+예시: 서울우유|우유|1개|2026-08-15`
   return geminiVision(apiKey, prompt, base64Image, 400, 0.1)
 }
 
@@ -87,10 +93,15 @@ export function getStorage(name) {
 }
 
 export async function analyzeReceiptImage(apiKey, base64Image) {
-  const prompt = `이 영수증 사진에서 식재료(식품)만 골라서 반드시 아래 형식으로 한 줄씩 출력하세요. 생활용품 제외.
+  const prompt = `이 영수증 사진에서 식재료(식품)만 골라서 반드시 아래 형식으로 한 줄씩 출력해줘. 생활용품 제외.
 형식: 제품명|수량|YYYY-MM-DD
-오늘 날짜는 ${TODAY}입니다. 소비기한은 일반 보관기간 기준으로 계산하세요.
-예: 우유|2개|2026-07-28`
+규칙:
+1. 설명, 인사, 추가 문장, 마크다운, 코드블록, 목록 금지
+2. 식재료만 출력하고 생활용품은 제외
+3. 각 줄은 제품명|수량|YYYY-MM-DD 형식만 사용
+4. 날짜가 없으면 오늘(${TODAY}) 기준으로 일반 보관기간을 추정해서 YYYY-MM-DD로 작성
+5. 출력은 줄바꿈으로 여러 줄 가능하지만, 각 줄은 위 형식만 사용
+예시: 우유|2개|2026-07-28`
   return geminiVision(apiKey, prompt, base64Image, 400, 0.1)
 }
 
@@ -110,28 +121,57 @@ ${urgentIngredients.length > 0 ? '빨리 먹어야 하는 재료: ' + urgentIngr
 
 export function parseGptTable(text) {
   const items = []
-  const lines = text.split('\n')
+  const raw = (text || '').toString()
+  const lines = raw.split(/\r?\n/)
   for (const line of lines) {
     let clean = line.replace(/^[*\s\-•]+\*?\*?/, '').trim()
     clean = clean.replace(/\*\*/g, '')
     clean = clean.replace(/^\|\s*|\s*\|$/g, '')
-    const parts = clean.split(/\s*\|\s*/)
-    let name = parts[0].trim()
+    if (!clean) continue
+    if (/^[-=]{3,}/.test(clean)) continue
+    if (/식재료|제품명|식품아님|참고|형식|예:|출력/.test(clean)) continue
+
+    const parts = clean.split(/\s*\|\s*/).map(p => p.trim()).filter(Boolean)
+    if (parts.length === 0) continue
+
+    let name = parts[0] || ''
     if (!name || name.length < 2) continue
-    if (name.includes('---') || name.includes('식재료') || name.includes('제품명') || name.includes('식품아님') || name.includes('참고')) continue
-    if (name.includes('이(가)') || name.includes('을') || name.includes('를') || name.includes('형식')) continue
+    if (name.includes('---') || name.includes('이(가)') || name.includes('을') || name.includes('를')) continue
     if (name.length > 50) name = name.slice(0, 50)
-    let category = (parts[1] || '').trim()
-    let qty = (parts[2] || '').trim()
-    if (!qty) qty = '1개'
-    const expiryRaw = (parts[3] || '').trim()
-    const expiryMatch = expiryRaw.match(/\d{4}-\d{2}-\d{2}/)
-    let expiry = expiryMatch ? expiryMatch[0] : expiryRaw
+
+    let category = ''
+    let qty = '1개'
+    let expiry = ''
+
+    if (parts.length >= 2) {
+      category = parts[1]
+    }
+    if (parts.length >= 3) {
+      qty = parts[2]
+    }
+    if (parts.length >= 4) {
+      expiry = parts[3]
+    }
+
+    const expiryMatch = expiry.match(/\d{4}-\d{2}-\d{2}/)
     if (expiry && !expiry.includes('-')) {
       const m = expiry.match(/(\d{4})년\s*(\d{1,2})월\s*(\d{1,2})일/)
       if (m) expiry = `${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`
     }
+
+    if (expiryMatch) expiry = expiryMatch[0]
+    if (!qty) qty = '1개'
+
     items.push({ name, category: category || name, qty, expiry: expiry || '' })
   }
+
+  if (items.length === 0) {
+    const fallback = raw.match(/([가-힣A-Za-z0-9()\-\s]{2,})/)
+    if (fallback) {
+      const name = fallback[1].trim().slice(0, 50)
+      items.push({ name, category: name, qty: '1개', expiry: '' })
+    }
+  }
+
   return items
 }
