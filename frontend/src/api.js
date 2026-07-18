@@ -1,7 +1,8 @@
 const TODAY = new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })
+const BACKEND_URL = 'https://cleanfridgeapp.onrender.com'
 
 async function geminiText(apiKey, prompt, tokens = 600, temp = 0.3) {
-  const resp = await fetch('/api/gemini/text', {
+  const resp = await fetch(`${BACKEND_URL}/api/gemini/text`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ apiKey, prompt, tokens, temp }),
@@ -17,7 +18,7 @@ async function geminiText(apiKey, prompt, tokens = 600, temp = 0.3) {
 }
 
 async function geminiVision(apiKey, prompt, base64Image, tokens = 600, temp = 0.3) {
-  const resp = await fetch('/api/gemini/vision', {
+  const resp = await fetch(`${BACKEND_URL}/api/gemini/vision`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ apiKey, prompt, base64Image, tokens, temp }),
