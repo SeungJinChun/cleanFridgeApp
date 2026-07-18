@@ -7,29 +7,29 @@ export default function HomePage({
     <div className="space-y-4">
       {sortedItems.length > 0 && (
         <button onClick={() => navigate('/recipe')}
-          className="w-full py-2.5 bg-white border-2 border-emerald-200 text-emerald-700 rounded-xl text-sm font-bold hover:bg-emerald-50 shadow-sm"
+          className="w-full rounded-[14px] border border-[var(--line)] bg-[var(--panel)] px-4 py-3 text-sm font-semibold text-[var(--accent-deep)] shadow-[var(--shadow)] hover:bg-[var(--accent-soft)]"
         >🍳 레시피 보기</button>
       )}
       {urgentItems.length > 0 && (
-        <div className="bg-red-50 border-2 border-red-300 rounded-xl p-4">
-          <h3 className="text-base font-bold text-red-700 mb-2">🚨 마감 임박! 소비 독려 알림</h3>
+        <div className="rounded-[18px] border border-[var(--grade-a-soft)] bg-[var(--grade-a-soft)] p-4 shadow-[var(--shadow)]">
+          <h3 className="mb-2 text-base font-bold text-[var(--grade-a)]">🚨 마감 임박! 소비 독려 알림</h3>
           {urgentItems.map(item => (
-            <p key={item.id} className="text-sm text-red-600 mb-1"><strong>{item.name}</strong>이(가) 유통기한 마감 직전! 오늘 소비하지 않으면 지구와 지갑이 아파해요</p>
+            <p key={item.id} className="mb-1 text-sm text-[var(--grade-a)]"><strong>{item.name}</strong>이(가) 유통기한 마감 직전! 오늘 소비하지 않으면 지구와 지갑이 아파해요</p>
           ))}
-          <button onClick={() => navigate('/recipe')} className="mt-2 px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-bold hover:bg-red-700">🍳 마감 재료 확인하러 가기</button>
+          <button onClick={() => navigate('/recipe')} className="mt-2 rounded-lg bg-[var(--grade-a)] px-4 py-2 text-sm font-bold text-white hover:opacity-90">🍳 마감 재료 확인하러 가기</button>
         </div>
       )}
       {sortedItems.length === 0 ? (
-        <div className="text-center py-16 sm:py-20">
-          <p className="text-5xl sm:text-6xl mb-4">🧊</p>
-          <p className="text-gray-500 font-medium text-sm sm:text-base">냉장고가 비어 있어요</p>
-          <p className="text-gray-400 text-xs sm:text-sm mt-1 mb-4">제품을 찍거나 직접 추가해 보세요</p>
-          <button onClick={() => navigate('/input')} className="px-6 py-2.5 bg-emerald-600 text-white rounded-full text-sm font-bold hover:bg-emerald-700 shadow">+ 식재료 추가하기</button>
+        <div className="rounded-[18px] border border-[var(--line)] bg-[var(--panel)] py-16 text-center shadow-[var(--shadow)] sm:py-20">
+          <p className="mb-4 text-5xl sm:text-6xl">🧊</p>
+          <p className="text-sm font-semibold text-[var(--sub)] sm:text-base">냉장고가 비어 있어요</p>
+          <p className="mt-1 mb-4 text-xs text-[var(--sub)] sm:text-sm">제품을 찍거나 직접 추가해 보세요</p>
+          <button onClick={() => navigate('/input')} className="rounded-full bg-[var(--accent)] px-6 py-2.5 text-sm font-bold text-white shadow-[var(--shadow)] hover:bg-[var(--accent-deep)]">+ 식재료 추가하기</button>
         </div>
       ) : (
         <div>
           <div className="space-y-2">
-            <h2 className="text-lg font-bold">전체 식재료 ({sortedItems.length}개)</h2>
+            <h2 className="text-lg font-bold text-[var(--accent-deep)]">전체 식재료 ({sortedItems.length}개)</h2>
             {sortedItems.map(item => (
               <ItemCard key={item.id} item={item}
                 editingId={editingId} setEditingId={setEditingId}
@@ -52,10 +52,10 @@ function getDday(expiryStr) {
 }
 
 function getUrgency(dday) {
-  if (dday <= 0) return { label: '🔥 만료', text: 'text-red-700', bar: 'bg-red-400' }
-  if (dday <= 2) return { label: '⚠️ 임박', text: 'text-orange-700', bar: 'bg-orange-400' }
-  if (dday <= 5) return { label: '📅 곧', text: 'text-yellow-700', bar: 'bg-yellow-400' }
-  return { label: '✅ 여유', text: 'text-green-600', bar: 'bg-green-400' }
+  if (dday <= 0) return { label: '🔥 만료', text: 'text-[var(--grade-a)]', bar: 'bg-[var(--grade-a)]' }
+  if (dday <= 2) return { label: '⚠️ 임박', text: 'text-[var(--grade-b)]', bar: 'bg-[var(--grade-b)]' }
+  if (dday <= 5) return { label: '📅 곧', text: 'text-[var(--grade-c)]', bar: 'bg-[var(--grade-c)]' }
+  return { label: '✅ 여유', text: 'text-[var(--accent)]', bar: 'bg-[var(--accent)]' }
 }
 
 function foodIcon(name) {
@@ -79,34 +79,34 @@ function ItemCard({ item, editingId, setEditingId, handleRemove, updateExpiry, r
   const maxDays = Math.max(14, Math.abs(dday) + 7)
   const barPercent = Math.min(100, Math.max(0, dday <= 0 ? 100 : 100 - (dday / maxDays) * 100))
   return (
-    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+    <div className="overflow-hidden rounded-[16px] border border-[var(--line)] bg-[var(--panel)] shadow-[var(--shadow)] transition-shadow hover:shadow-md">
       <div className="flex items-center gap-3 p-3">
         <span className="text-2xl">{foodIcon(item.name)}</span>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-bold truncate">{item.name}</span>
-            <span className="text-xs text-gray-400 ml-1 shrink-0">{getStorage(item.name)}</span>
-            <button onClick={() => handleRemove(item.id)} className="text-gray-300 hover:text-red-500 text-base leading-none ml-1 shrink-0">✕</button>
+          <div className="flex items-center justify-between gap-2">
+            <span className="truncate text-sm font-bold text-[var(--accent-deep)]">{item.name}</span>
+            <span className="shrink-0 text-[11px] text-[var(--sub)]">{getStorage(item.name)}</span>
+            <button onClick={() => handleRemove(item.id)} className="ml-1 shrink-0 text-base leading-none text-[var(--sub)] hover:text-[var(--grade-a)]">✕</button>
           </div>
-          <div className="flex items-center gap-2 mt-0.5">
-            <span className="text-xs text-gray-400">{item.qty}</span>
+          <div className="mt-0.5 flex items-center gap-2">
+            <span className="text-[11px] text-[var(--sub)]">{item.qty}</span>
             {isEditing ? (
               <input type="date" defaultValue={item.expiry?.slice(0,10) || ''} autoFocus
                 onBlur={e => { updateExpiry(item.id, e.target.value); refreshItems(); setEditingId(null) }}
                 onKeyDown={e => { if (e.key === 'Enter') { updateExpiry(item.id, e.target.value); refreshItems(); setEditingId(null) }}}
-                className="text-xs border border-gray-300 rounded px-1 py-0.5 w-28" />
+                className="w-28 rounded border border-[var(--line)] px-1 py-0.5 text-[11px]" />
             ) : item.expiry ? (
-              <span onClick={() => setEditingId(item.id)} className={`text-xs px-1.5 py-0.5 rounded-full font-bold cursor-pointer bg-${u.text.split('-')[1]}-100 ${u.text}`}>
+              <span onClick={() => setEditingId(item.id)} className={`cursor-pointer rounded-full px-1.5 py-0.5 text-[11px] font-bold ${u.text}`}>
                 {u.label} D-{Math.abs(dday)}일
               </span>
             ) : (
-              <span onClick={() => setEditingId(item.id)} className="text-xs text-gray-400 cursor-pointer bg-gray-100 px-1.5 py-0.5 rounded-full">미지정</span>
+              <span onClick={() => setEditingId(item.id)} className="cursor-pointer rounded-full bg-[var(--accent-soft)] px-1.5 py-0.5 text-[11px] text-[var(--accent)]">미지정</span>
             )}
           </div>
         </div>
       </div>
       {item.expiry && (
-        <div className="h-1 bg-gray-100">
+        <div className="h-1 bg-[var(--line)]">
           <div className={`h-full transition-all ${u.bar}`} style={{ width: `${barPercent}%` }} />
         </div>
       )}
