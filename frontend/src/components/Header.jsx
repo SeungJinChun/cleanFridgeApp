@@ -26,7 +26,7 @@ export default function Header({ apiKey, setApiKey }) {
         <div className="max-w-2xl mx-auto flex items-end justify-between gap-3">
           <div className="min-w-0 leading-none">
             <h1 className="text-[20px] sm:text-[24px] font-semibold text-[var(--accent-deep)] tracking-[-0.01em]">냉장고 관리자</h1>
-            <p className="mt-[2px] text-[10px] uppercase tracking-[0.16em] text-[var(--accent)] font-mono">Fridge Rescue Log</p>
+            <p className="mt-[7px] text-[10px] uppercase tracking-[0.16em] text-[var(--accent)] font-mono">Fridge Rescue Log</p>
           </div>
           <button
             onClick={() => setIsOpen(true)}
