@@ -3,8 +3,7 @@ export default function Header({ apiKey, setApiKey, items }) {
     <header className="sticky top-0 z-10 px-4 pt-5 pb-3 bg-[var(--bg)]">
       <div className="max-w-2xl mx-auto flex items-end justify-between gap-3">
         <div>
-          <div className="text-[11px] uppercase tracking-[0.14em] text-[var(--accent)] font-mono">Fridge Rescue Log</div>
-          <h1 className="mt-1 text-[22px] sm:text-[26px] font-semibold text-[var(--accent-deep)] tracking-[-0.01em]">냉장고 파먹기 도우미</h1>
+          <h1 className="text-[22px] sm:text-[26px] font-semibold text-[var(--accent-deep)] tracking-[-0.01em]">냉장고 파먹기 도우미</h1>
           <p className="mt-1 text-[13px] text-[var(--sub)]">있는 재료부터, 임박한 순서대로.</p>
         </div>
         <div className="flex items-center gap-2">
