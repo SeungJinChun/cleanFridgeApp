@@ -57,6 +57,17 @@ export default function InputPage({ apiKey, onItemsAdded, showStatus, loading, s
     closeCamera(setCamera, null)
   }
 
+  const getFriendlyError = (err) => {
+    const msg = err?.message || err?.toString() || ''
+    if (/Failed to fetch|NetworkError|network|fetch/i.test(msg)) {
+      return '백엔드가 깨어나는 중입니다. 잠시 후 다시 시도해 주세요.'
+    }
+    if (/5\d\d|timeout|timed out|503|504|502/i.test(msg)) {
+      return '서버가 잠시 응답하지 않습니다. 잠시 후 다시 시도해 주세요.'
+    }
+    return msg || '분석 중 오류가 발생했습니다.'
+  }
+
   const handleProductAnalyze = async () => {
     setLoading(true)
     showStatus('제품 분석 중...')
@@ -65,11 +76,11 @@ export default function InputPage({ apiKey, onItemsAdded, showStatus, loading, s
       const result = await analyzeProductImage(apiKey, b64)
       const parsed = parseGptTable(result)
       const item = parsed[0]
-      if (!item || !item.name) { showStatus('인식 실패: ' + result.slice(0, 80)); setLoading(false); return }
+      if (!item || !item.name) { showStatus('인식 실패: ' + result.slice(0, 80)); return }
       setPendingItem(item)
       setProductImage(null)
-    } catch (e) { showStatus('제품 분석 오류: ' + e.message) }
-    setLoading(false)
+    } catch (e) { showStatus('제품 분석 오류: ' + getFriendlyError(e)) }
+    finally { setLoading(false) }
   }
 
   const handleReceiptAnalyze = async () => {
@@ -88,8 +99,8 @@ export default function InputPage({ apiKey, onItemsAdded, showStatus, loading, s
       }))
       onItemsAdded(list)
       setCapturedImage(null)
-    } catch (e) { showStatus('영수증 분석 오류: ' + e.message) }
-    setLoading(false)
+    } catch (e) { showStatus('영수증 분석 오류: ' + getFriendlyError(e)) }
+    finally { setLoading(false) }
   }
 
   const handleManualAdd = () => {

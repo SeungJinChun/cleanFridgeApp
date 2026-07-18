@@ -1,35 +1,60 @@
 const TODAY = new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })
-const BACKEND_URL = 'https://cleanfridgeapp.onrender.com'
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'https://cleanfridgeapp.onrender.com'
+const MAX_RETRIES = 3
 
-async function geminiText(apiKey, prompt, tokens = 600, temp = 0.3) {
-  const resp = await fetch(`${BACKEND_URL}/api/gemini/text`, {
+function parseErrorMessage(errText) {
+  let msg = (errText || '').slice(0, 200)
+  try { msg = JSON.parse(errText).error || msg } catch {}
+  return msg || '서버 응답이 올바르지 않습니다.'
+}
+
+function getRetryDelay(attempt) {
+  return 1200 * (attempt + 1)
+}
+
+async function wait(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms))
+}
+
+async function requestBackend(endpoint, payload) {
+  const url = `${BACKEND_URL}${endpoint}`
+  const options = {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ apiKey, prompt, tokens, temp }),
-  })
-  if (!resp.ok) {
-    const errText = await resp.text()
-    let msg = errText.slice(0, 200)
-    try { msg = JSON.parse(errText).error || msg } catch {}
-    throw new Error(msg)
+    body: JSON.stringify(payload),
   }
-  const data = await resp.json()
+
+  let lastError = null
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt += 1) {
+    try {
+      const resp = await fetch(url, options)
+      const text = await resp.text()
+      if (resp.ok) {
+        try { return JSON.parse(text) } catch { return { text } }
+      }
+
+      const isRetryable = resp.status >= 500 || resp.status === 408 || resp.status === 429
+      if (!isRetryable || attempt === MAX_RETRIES) {
+        throw new Error(parseErrorMessage(text))
+      }
+      await wait(getRetryDelay(attempt))
+    } catch (err) {
+      lastError = err
+      if (attempt === MAX_RETRIES) break
+      await wait(getRetryDelay(attempt))
+    }
+  }
+
+  throw lastError || new Error('백엔드 연결에 실패했습니다.')
+}
+
+async function geminiText(apiKey, prompt, tokens = 600, temp = 0.3) {
+  const data = await requestBackend('/api/gemini/text', { apiKey, prompt, tokens, temp })
   return data.text
 }
 
 async function geminiVision(apiKey, prompt, base64Image, tokens = 600, temp = 0.3) {
-  const resp = await fetch(`${BACKEND_URL}/api/gemini/vision`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ apiKey, prompt, base64Image, tokens, temp }),
-  })
-  if (!resp.ok) {
-    const errText = await resp.text()
-    let msg = errText.slice(0, 200)
-    try { msg = JSON.parse(errText).error || msg } catch {}
-    throw new Error(msg)
-  }
-  const data = await resp.json()
+  const data = await requestBackend('/api/gemini/vision', { apiKey, prompt, base64Image, tokens, temp })
   return data.text
 }
 
